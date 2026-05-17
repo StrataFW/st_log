@@ -1,0 +1,10 @@
+strata-*.log
+*.log
+
+node_modules/
+dist/
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
