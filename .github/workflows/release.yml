@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync fxmanifest version
+        run: sed -i "s/^version '.*'$/version '${{ steps.ver.outputs.version }}'/" fxmanifest.lua
+
+      - name: Package
+        run: |
+          name=${{ github.event.repository.name }}
+          mkdir -p dist/$name
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='dist' \
+            --exclude='*.log' \
+            ./ dist/$name/
+          cd dist && zip -qr ../$name.zip $name
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.event.repository.name }}.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
